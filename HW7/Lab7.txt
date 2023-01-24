@@ -1,0 +1,247 @@
+### MainActivity.java ###
+
+import androidx.appcompat.app.AppCompatActivity;
+import android.os.Bundle;
+import android.view.View;
+import android.widget.EditText;
+import android.widget.Toast;
+
+public class MainActivity extends AppCompatActivity {
+    EditText etName, etPhone, etId;
+    MyDBHandler dbHandler;
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        etName = (EditText) findViewById(R.id.edName);
+        etPhone = (EditText) findViewById(R.id.edPhon);
+        etId = (EditText) findViewById(R.id.edID);
+
+        dbHandler = new MyDBHandler(this);
+    }
+    public void addButtonClicked(View v){
+
+        String n = etName.getText().toString();
+        String p = etPhone.getText().toString();
+
+        dbHandler.addRecord(n,p);
+
+        etName.setText("");
+        etPhone.setText("");
+    }
+
+    public void printDatabaseData(View v){
+        String db = dbHandler.dataBaseToString();
+        Toast.makeText(getApplicationContext(),db,Toast.LENGTH_LONG).show();
+
+    }
+
+    public void updateRecord(View v){
+        //Left as HW
+        String id=etId.getText().toString();
+        String na=etName.getText().toString();
+        String ph=etPhone.getText().toString();
+
+        dbHandler.updateRecord(id,na,ph);
+        etId.setText("");
+        etName.setText("");
+        etPhone.setText("");
+        Toast.makeText(getApplicationContext(),"Database has been updated",Toast.LENGTH_LONG).show();
+    }
+}
+
+========================================================================================================
+### MyDBHandler.java ###
+
+import android.content.ContentValues;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteOpenHelper;
+import android.util.Log;
+
+public class MyDBHandler extends SQLiteOpenHelper {
+    private static final int DATABASE_VERSION = 1;
+    private static final String DATABASE_NAME = "info.db";
+    public static final String TABLE_NAME = "tblFreinds";
+    public static final String COLUMN_RECID = "recID";
+    public static final String COLUMN_NAME = "name";
+    public static final String COLUMN_PHONE = "phone";
+
+    public MyDBHandler (MainActivity context){
+        super(context, DATABASE_NAME, null, DATABASE_VERSION);
+    }
+
+    @Override
+    public void onCreate(SQLiteDatabase db){
+
+        String sqlStmt = " CREATE TABLE " + TABLE_NAME+ " (" +
+                COLUMN_RECID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                COLUMN_NAME + " TEXT NOT NULL, " +
+                COLUMN_PHONE + " TEXT);" ;
+
+        Log.d("DB", "Created");
+        db.execSQL(sqlStmt);
+    }
+
+    @Override
+    public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+        db.execSQL("DROP TABLE IF EXISTS "+ TABLE_NAME);
+        Log.d("DB","Tha table has been dropped");
+        onCreate(db);
+    }
+
+    public void addRecord ( String nameStr, String phoneStr){
+
+        SQLiteDatabase db = getWritableDatabase();
+
+        db.execSQL("insert into "+ TABLE_NAME + "("+ COLUMN_NAME + "," +
+                COLUMN_PHONE + ") VALUES (?,?)", new String [] {nameStr, phoneStr});
+        //db.close();
+    }
+
+    public String dataBaseToString()
+    {
+        String dbData = "";
+        SQLiteDatabase db = getWritableDatabase();
+
+        String query = "SELECT * FROM "+ TABLE_NAME;
+
+        Cursor c = db.rawQuery(query,null);
+
+        c.moveToFirst();
+
+        while(!c.isAfterLast())
+        {
+            dbData += c.getString(c.getColumnIndex(COLUMN_RECID));
+            dbData += " | "+ c.getString(c.getColumnIndex(COLUMN_NAME));
+            dbData += " | "+ c.getString(c.getColumnIndex(COLUMN_PHONE));
+            dbData += "\n";
+            c.moveToNext();
+        }
+
+        //db.close();
+        return dbData;
+    }
+
+    public void updateRecord(String id,String name,String phone){
+        //Left as HW
+        SQLiteDatabase db= getWritableDatabase();
+        ContentValues coValues=new ContentValues();
+        coValues.put(COLUMN_RECID,id);
+        coValues.put(COLUMN_NAME,name);
+        coValues.put(COLUMN_PHONE,phone);
+        db.update(TABLE_NAME,coValues,"recID= ?",new String[] {id});
+    }
+}
+========================================================================================================
+### activity_main.xml ###
+
+<?xml version="1.0" encoding="UTF-8"?>
+
+     <androidx.constraintlayout.widget.ConstraintLayout
+    tools:context=".MainActivity"
+    android:layout_height="match_parent"
+    android:layout_width="match_parent"
+    xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <TextView
+        android:layout_height="wrap_content"
+        android:layout_width="wrap_content"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="@+id/edName"
+        app:layout_constraintEnd_toEndOf="@+id/edName"
+        android:textSize="18sp"
+        android:text="Name:"
+        android:layout_marginTop="43dp"
+        android:id="@+id/txtName"/>
+
+    <EditText
+        android:layout_height="wrap_content"
+        android:layout_width="wrap_content"
+        app:layout_constraintEnd_toEndOf="@+id/edPhon"
+        android:layout_marginTop="17dp"
+        android:id="@+id/edName"
+        app:layout_constraintTop_toBottomOf="@+id/txtName"
+        android:inputType="textPersonName"
+        android:ems="10"
+        android:layout_marginEnd="4dp"/>
+
+    <TextView
+        android:layout_height="wrap_content"
+        android:layout_width="wrap_content"
+        app:layout_constraintStart_toStartOf="@+id/edName"
+        app:layout_constraintEnd_toEndOf="@+id/edName"
+        android:textSize="18sp"
+        android:text="Phone:"
+        android:id="@+id/txtPhone"
+        app:layout_constraintBottom_toTopOf="@+id/edPhon"
+        android:layout_marginBottom="8dp"/>
+
+    <EditText
+        android:layout_height="wrap_content"
+        android:layout_width="wrap_content"
+        app:layout_constraintEnd_toEndOf="@+id/edID"
+        android:id="@+id/edPhon"
+        android:inputType="textPersonName"
+        android:ems="10"
+        android:layout_marginEnd="4dp"
+        app:layout_constraintBottom_toTopOf="@+id/txtID" android:layout_marginBottom="18dp"/>
+
+    <TextView
+        android:layout_height="wrap_content"
+        android:layout_width="wrap_content"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:textSize="18sp"
+        android:text="Enter ID to update"
+        android:id="@+id/txtID"
+        app:layout_constraintBottom_toTopOf="@+id/edID"
+        android:layout_marginBottom="4dp"/>
+
+    <EditText
+        android:layout_height="wrap_content"
+        android:layout_width="wrap_content"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="272dp"
+        android:id="@+id/edID" android:inputType="number"
+        android:ems="10"
+        app:layout_constraintHorizontal_bias="0.497"/>
+
+    <Button
+        android:layout_height="wrap_content"
+        android:layout_width="wrap_content"
+        app:layout_constraintStart_toStartOf="@+id/edID"
+        android:text="Add a new record"
+        android:layout_marginTop="8dp"
+        android:id="@+id/btnAddRecord"
+        app:layout_constraintTop_toBottomOf="@+id/edID"
+        android:onClick="addButtonClicked"
+        android:layout_marginStart="20dp"/>
+
+    <Button
+        android:layout_height="wrap_content"
+        android:layout_width="wrap_content"
+        app:layout_constraintStart_toStartOf="@+id/btnAddRecord"
+        android:text="Show The DB data"
+        android:layout_marginTop="24dp"
+        android:id="@+id/btnShwDbData"
+        app:layout_constraintTop_toBottomOf="@+id/btnAddRecord"
+        android:onClick="printDatabaseData"/>
+
+    <Button
+        android:layout_height="wrap_content"
+        android:layout_width="wrap_content"
+        app:layout_constraintStart_toStartOf="@+id/btnShwDbData"
+        android:text="Update"
+        android:layout_marginTop="8dp"
+        android:id="@+id/btnUpdate"
+        app:layout_constraintTop_toBottomOf="@+id/btnShwDbData"
+        android:onClick="updateRecord"
+        android:layout_marginStart="36dp"/>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
